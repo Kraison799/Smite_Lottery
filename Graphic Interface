@@ -1,0 +1,135 @@
+"""
+Instituto Tecnológico de Costa Rica
+Escuela de Ingeniería en Computadores
+
+II Semestre 2017 - Taller de Programación
+Prof. Jeff Schmidt Peralta
+II Proyecto - Lotería TEC
+
+Víctor Ignacio Castrillo Muñoz
+Carnet: 2017110244
+
+Lenguaje de Programación: Python 3.4.2
+Interfaz: Tkinter 8.6.1
+"""
+
+### Libraries ###
+import pygame, time
+from tkinter import *
+from Objects import *
+from threading import Thread
+
+### Colors ###
+tk_black = "#000000"
+tk_white = "#FFFFFF"
+tk_dark_blue_1 = "#485C7B"
+tk_dark_blue_2 = "#36639E"
+
+### Flags ###
+mo_flag = False
+
+### Load Images Function ###
+def LoadPNG(img_name):
+    img = os.path.join("imgs", img_name+".png")
+    return img
+
+def LoadGIF(img_name):
+    img_path = os.path.join("imgs", img_name+".gif")
+    image = PhotoImage(file=img_path)
+    return image
+
+### Main Menu ###
+def Window():
+    mw = Tk()
+    mw.title("Smite Lottery")
+    mw.minsize(600, 375)
+    mw.resizable(width=False, height=False)
+
+    def Main_Menu():
+        global mo_flag
+        mm = Canvas(mw, width=596, height=371, bg=tk_black)
+        mm.place(x=0, y=0)
+
+        bg_img = LoadGIF("Background")
+        bg_label = Label(mm, image=bg_img, bg=tk_black)
+        bg_label.place(x=0, y=0)
+
+        help_img = LoadGIF("Help_Icon")
+        help_b = Button(mm, image=help_img, width=30, height=30, bg=tk_dark_blue_1, activebackground=tk_dark_blue_2)
+        help_b.place(x=564, y=339)
+
+        def Start_Game():
+            global mo_flag
+            if not mo_flag:
+                mo_flag = True
+                mo = Canvas(mw, width=140, height=200, bg=tk_dark_blue_2)
+                mo.place(x=320, y=77.5)
+                match_l = Label(mo, text="Match Options", font=("Helvetica", 15, "bold"), bg=tk_dark_blue_2)
+                match_l.place(x=0, y=0)
+                players_l = Label(mo, text="Players", font=("Helvetica", 10, "bold"), bg=tk_dark_blue_2)
+                players_l.place(x=20, y=35)
+                players_op = Spinbox(mo, from_=2, to=6, state=NORMAL, width=3, buttonbackground=tk_dark_blue_1, bg=tk_white)
+                players_op.place(x=80, y=36.5)
+                mode_l = Label(mo, text="Game Mode", font=("Helvetica", 10, "bold"), bg=tk_dark_blue_2)
+                mode_l.place(x=29, y=65)
+                mode = StringVar(mo)
+                mode.set("Full")
+                mode_op = OptionMenu(mo, mode, "Full", "Corners", "Line", "Diagonal")
+                mode_op.place(x=30, y=95)
+
+                def Choose():
+                    p_name_l = Label(mo, text="Username", font=("Helvetica", 12, "bold"), bg=tk_dark_blue_2)
+                    p_name_l.place(x=30, y=35)
+                    p_name_e = Entry(mo, width=15)
+                    p_name_e.place(x=26.5, y=80)
+
+                    def Search():
+                        for player in Players():
+                            if player.name == p_name_e.get():
+                                return player
+                            else:
+                                return ""
+                        messagebox.showerror("Error", "User not found.")
+
+                    match_b = Button(mo, text="Start", font=("Helvetica", 15, "bold"), command=Search, bg=tk_dark_blue_1, activebackground=tk_dark_blue_2)
+                    match_b.place(x=38, y=155)
+
+                def Select_Players():
+                    players_list = []
+                    num_players = int(players_op.get())
+                    game_mode = mode.get()
+
+                    match_l.destroy()
+                    players_l.destroy()
+                    players_op.destroy()
+                    mode_l.destroy()
+                    mode_op.destroy()
+                    match_b.destroy()
+
+                    Choose()
+
+                match_b = Button(mo, text="Start", font=("Helvetica", 15, "bold"), command=Select_Players, bg=tk_dark_blue_1, activebackground=tk_dark_blue_2)
+                match_b.place(x=38, y=155)
+
+                def Cancel():
+                    global mo_flag
+                    mo.destroy()
+                    mo_flag = False
+
+                cancel_img = LoadGIF("Cancel_Button")
+                cancel_b = Button(mo, image=cancel_img, width=25, height=25, command=Cancel, bg=tk_black, activebackground=tk_black)
+                cancel_b.place(x=113, y=173)
+
+                mw.mainloop()
+
+        play_img = LoadGIF("Play_Button")
+        start_b = Button(mm, image=play_img, width=73, height=37, command=Start_Game)
+        start_b.place(x=50, y=100)
+
+        mw.mainloop()
+
+    Main_Menu()
+
+    mw.mainloop()
+
+Window()
