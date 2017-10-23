@@ -1,0 +1,180 @@
+"""
+Classes
+"""
+
+### Libraries ###
+
+import os, random
+
+class Player:
+    def __init__(self, code, name, mode, score):
+        self.code = code
+        self.name = name
+        self.mode = mode
+        self.score = int(score)
+        self.chart = []
+    def __select_chart__(self):
+        deck = Deck()
+        line_1 = []
+        line_2 = []
+        line_3 = []
+        line_4 = []
+        chart = [line_1, line_2, line_3, line_4]
+        for line in chart:
+            while len(line) < 4:
+                card = random.choice(deck)
+                deck.remove(card)
+                line.append(card)
+        self.chart = chart
+    def __check_chart__(self, deck, game_mode):
+        if game_mode == "Full":
+            for line in self.chart:
+                for g in line:
+                    i = 0
+                    for card in deck:
+                        if g.code != card.code:
+                            if i == len(deck[:-1]):
+                                return False
+                            i += 1
+                        if g.code == card.code:
+                            break
+            return True
+
+class Card:
+    def __init__(self, code, name, pantheon, image):
+        self.code = code
+        self.name = name
+        self.pantheon = pantheon
+        self.image = image
+
+def Deck():
+    file_path = os.path.join("docs", "Deck.txt")
+    file = open(file_path, "r")
+    cards_info = []
+    seek_point = 0
+    while file.readline() != "":
+        file.seek(seek_point)
+        card = file.readline()[:-1]
+        cards_info.append(card)
+        seek_point += len(card)+1
+    file.close()
+    for x in cards_info:
+        if x == "":
+            cards_info.remove(x)
+    deck = []
+    for string in cards_info:
+        card = Card("", "", "", "")
+        data = ""
+        index = 0
+        while string != "":
+            if string[0] == "/":
+                if index == 0:
+                    card.code = data
+                if index == 1:
+                    card.name = data
+                if index == 2:
+                    card.pantheon = data
+                if index == 3:
+                    card.image = data
+                data = ""
+                index += 1
+            else:
+                data += string[0]
+            string = string[1:]
+        deck.append(card)
+    return deck
+
+def Players():
+    file_path = os.path.join("docs", "Players.txt")
+    file = open(file_path, "r")
+    players_info = []
+    seek_point = 0
+    while file.readline() != "":
+        file.seek(seek_point)
+        player = file.readline()[:-1]
+        players_info.append(player)
+        seek_point += len(player)+1
+    file.close()
+    for x in players_info:
+        if x == "":
+            players_info.remove(x)
+    players = []
+    for string in players_info:
+        player = Player("", "", "", "0")
+        data = ""
+        index = 0
+        while string != "":
+            if string[0] == "/":
+                if index == 0:
+                    player.code = data
+                if index == 1:
+                    player.name = data
+                if index == 2:
+                    player.mode = data
+                if index == 3:
+                    player.score = int(data)
+                data = ""
+                index += 1
+            else:
+                data += string[0]
+            string = string[1:]
+        players.append(player)
+    return players
+
+def Save_User(user_list):
+    save_string = ""
+    for user in user_list:
+        save_string += user.code + "/" + user.name + "/" + user.mode + "/" + str(user.score) + "/\n"
+    file_path = os.path.join("docs", "Players.txt")
+    file = open(file_path, "r+")
+    file.truncate(0)
+    file.write(save_string)
+    file.close()
+
+def Create_User(new_name):
+    saved_users = Players()
+    last_code = saved_users[-1].code[2:]
+    if last_code == "FF":
+        return "Error: There is no room for any other user."
+    digits = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"]
+    i = 0
+    while i < len(digits):
+        if last_code[1] == digits[i]:
+            if i < 15:
+                last_code = last_code[0] + digits[i+1]
+                break
+            elif i == 15:
+                i = 0
+                while i < len(digits):
+                    if last_code[0] == digits[i]:
+                        last_code = digits[i+1] + digits[0]
+                        break
+                    elif last_code[0] != digits[i]:
+                        i += 1
+        i += 1
+    new_player = Player("#P"+last_code, new_name, "Manual", "0")
+    saved_users.append(new_player)
+    Save_User(saved_users)
+
+class Match:
+    def __init__(self, players, mode):
+        self.players = players
+        self.mode = mode
+        self.deck = Deck()
+        self.check = []
+        self.winners = []
+        for player in self.players:
+            player.__select_chart__()
+    def __pass_turn__(self):
+        card = random.choice(self.deck)
+        self.deck.remove(card)
+        self.check.append(card)
+        for x in self.check:
+            print(x.name)
+        for player in self.players:
+            if player.__check_chart__(self.check, self.mode):
+                self.winners.append(player)
+        if len(self.winners) != 0:
+            for winner in self.winners:
+                print("Winner: ", winner.name)
+            return "Congratulations"
