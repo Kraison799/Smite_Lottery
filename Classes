@@ -131,6 +131,15 @@ def Save_User(user_list):
     file.write(save_string)
     file.close()
 
+def Find_User(username):
+    if username == "":
+        username = "Default"
+    players = Players()
+    for user in players:
+        if user.name == username:
+            return user
+    return False
+
 def Create_User(new_name):
     saved_users = Players()
     last_code = saved_users[-1].code[2:]
@@ -165,12 +174,9 @@ class Match:
         self.winners = []
         for player in self.players:
             player.__select_chart__()
-    def __pass_turn__(self):
-        card = random.choice(self.deck)
+    def __pass_turn__(self, card):
         self.deck.remove(card)
         self.check.append(card)
-        for x in self.check:
-            print(x.name)
         for player in self.players:
             if player.__check_chart__(self.check, self.mode):
                 self.winners.append(player)
