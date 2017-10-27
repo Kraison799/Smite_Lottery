@@ -20,13 +20,21 @@ from Objects import *
 from threading import Thread
 
 ### Colors ###
+# Tkinter
 tk_black = "#000000"
 tk_white = "#FFFFFF"
 tk_dark_blue_1 = "#485C7B"
 tk_dark_blue_2 = "#36639E"
+# Pygame
+pg_black = (0, 0, 0)
+pg_white = (255, 255, 255)
+pg_blue = (47, 114, 208)
+pg_green = (143, 206, 54)
+pg_red = (232, 67, 67)
 
 ### Flags ###
 mo_flag = False
+game_flag = False
 
 ### Load Images Function ###
 def LoadPNG(img_name):
@@ -40,6 +48,7 @@ def LoadGIF(img_name):
 
 ### Main Menu ###
 def Window():
+    global mw
     mw = Tk()
     mw.title("Smite Lottery")
     mw.minsize(600, 375)
@@ -77,25 +86,8 @@ def Window():
                 mode_op = OptionMenu(mo, mode, "Full", "Corners", "Line", "Diagonal")
                 mode_op.place(x=30, y=95)
 
-                def Choose():
-                    p_name_l = Label(mo, text="Username", font=("Helvetica", 12, "bold"), bg=tk_dark_blue_2)
-                    p_name_l.place(x=30, y=35)
-                    p_name_e = Entry(mo, width=15)
-                    p_name_e.place(x=26.5, y=80)
-
-                    def Search():
-                        for player in Players():
-                            if player.name == p_name_e.get():
-                                return player
-                            else:
-                                return ""
-                        messagebox.showerror("Error", "User not found.")
-
-                    match_b = Button(mo, text="Start", font=("Helvetica", 15, "bold"), command=Search, bg=tk_dark_blue_1, activebackground=tk_dark_blue_2)
-                    match_b.place(x=38, y=155)
-
                 def Select_Players():
-                    players_list = []
+                    global num_players, game_mode
                     num_players = int(players_op.get())
                     game_mode = mode.get()
 
@@ -110,6 +102,40 @@ def Window():
 
                 match_b = Button(mo, text="Start", font=("Helvetica", 15, "bold"), command=Select_Players, bg=tk_dark_blue_1, activebackground=tk_dark_blue_2)
                 match_b.place(x=38, y=155)
+
+                def Choose():
+                    p_name_l = Label(mo, text="Username", font=("Helvetica", 12, "bold"), bg=tk_dark_blue_2)
+                    p_name_l.place(x=30, y=35)
+                    p1_name_e = Entry(mo, width=15)
+                    p1_name_e.place(x=26.5, y=80)
+                    p2_name_e = Entry(mo, width=15)
+                    p2_name_e.place(x=26.5, y=120)
+
+                    def Create_Match():
+                        global num_players, match, mo_flag, game_flag
+                        if Find_User(p1_name_e.get()) != False and Find_User(p2_name_e.get()) != False:
+                            players_list = [Find_User(p1_name_e.get()), Find_User(p2_name_e.get())]
+                            num_players -= 2
+                            while num_players != 0:
+                                pc_user = Find_User("PC")
+                                players_list.append(pc_user)
+                                num_players -= 1
+
+                            match = Match(players_list, game_mode)
+
+                            mo.destroy()
+                            mo_flag = False
+                            mw.withdraw()
+                            game_flag = True
+                            Game_Screen(match)
+
+                        if not Find_User(p1_name_e.get()) or not Find_User(p2_name_e.get()):
+                            messagebox.showerror("Error", "User not found.")
+
+                    sm_b = Button(mo, text="Start", font=("Helvetica", 15, "bold"), command=Create_Match, bg=tk_dark_blue_1, activebackground=tk_dark_blue_2)
+                    sm_b.place(x=38, y=155)
+
+                    mo.mainloop()
 
                 def Cancel():
                     global mo_flag
@@ -131,5 +157,68 @@ def Window():
     Main_Menu()
 
     mw.mainloop()
+
+pygame.init()
+clock = pygame.time.Clock()
+
+def Game_Screen(match):
+    global game_flag, mw
+    gs = pygame.display.set_mode((1000, 650))
+    pygame.display.set_caption("Smite Lottery")
+
+    bg_img = pygame.image.load(LoadPNG("Fight_BG"))
+    bg_img = pygame.transform.scale(bg_img, (1000, 650))
+    gs.blit(bg_img, (0, 0))
+
+    card_img = pygame.image.load(LoadPNG("Card"))
+    gs.blit(card_img, (1000 - 20 - card_img.get_rect().width, 20))
+
+    def New_Card(card, match):
+        i = 120
+        while card.get_rect().width > 0:
+            card_img = pygame.image.load(LoadPNG("Card"))
+            gs.blit(card_img, (1000-20-card_img.get_rect().width, 20))
+            card = pygame.transform.scale(card_img, (i, card.get_rect().height))
+            gs.blit(card, (1000-20-card_img.get_rect().width, 20))
+            pygame.display.update()
+            time.sleep(0.025)
+            i-=10
+        if card.get_rect().width <= 0:
+            new_god = random.choice(match.deck)
+            match.__pass_turn__(new_god)
+            i = 10
+            while i < 120:
+                new_img = pygame.image.load(LoadPNG(new_god.image))
+                new_img = pygame.transform.scale(new_img, (i, 180))
+                gs.blit(new_img, (1000-20-card_img.get_rect().width-i, 20))
+                pygame.display.update()
+                time.sleep(0.025)
+                i+=10
+
+    while game_flag:
+        mouse = pygame.mouse.get_pos()
+        click = pygame.mouse.get_pressed()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                game_flag = False
+                pygame.quit()
+                mw.deiconify()
+
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    game_flag = False
+                    pygame.quit()
+                    mw.deiconify()
+
+        if 1000-20-card_img.get_rect().width < mouse[0] < 1000-20 and 20 < mouse[1] < 20 + card_img.get_rect().height:
+            if click[0] == 1:
+                if match.winners != []:
+                    gs.blit(bg_img, (0, 0))
+                if match.winners == []:
+                    New_Card(card_img, match)
+
+        pygame.display.update()
+        time.sleep(0.15)
 
 Window()
